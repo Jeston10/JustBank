@@ -35,20 +35,48 @@ export const getUserInfo = async ({ userId }: getUserInfoProps) => {
 export const signIn = async ({ email, password }: signInProps) => {
   try {
     const { account } = await createAdminClient();
-    const session = await account.createEmailPasswordSession(email, password);
 
-    cookies().set("appwrite-session", session.secret, {
+    const session = await account.createEmailPasswordSession(email, password);
+    console.log('Session created successfully:', session.userId);
+
+    const cookieStore = await cookies();
+    cookieStore.set("appwrite-session", session.secret, {
       path: "/",
       httpOnly: true,
       sameSite: "strict",
       secure: true,
     });
 
-    const user = await getUserInfo({ userId: session.userId }) 
+    const user = await getUserInfo({ userId: session.userId })
+    console.log('User info retrieved:', user);
+
+    if (!user) {
+      console.log('User not found in database, checking if user exists in Appwrite...');
+      // Try to get user directly from Appwrite
+      try {
+        const appwriteUser = await account.get();
+        console.log('Appwrite user exists:', appwriteUser);
+        throw new Error('User exists in Appwrite but not in database. Please sign up again.');
+      } catch (appwriteError) {
+        console.log('Appwrite user check failed:', appwriteError);
+        throw new Error('User not found. Please check your credentials or sign up.');
+      }
+    }
 
     return parseStringify(user);
-  } catch (error) {
-    console.error('Error', error);
+  } catch (error: any) {
+    console.log('Sign in error:', error);
+    
+    // Handle specific Appwrite errors
+    if (error.code === 401) {
+      throw new Error('Invalid email or password. Please check your credentials.');
+    }
+    
+    if (error.message) {
+      throw new Error(error.message);
+    }
+    
+    throw new Error('An error occurred during sign in. Please try again.');
   }
 }
 
@@ -69,14 +97,23 @@ export const signUp = async ({ password, ...userData }: SignUpParams) => {
 
     if(!newUserAccount) throw new Error('Error creating user')
 
-    const dwollaCustomerUrl = await createDwollaCustomer({
-      ...userData,
-      type: 'personal'
-    })
+    // Try to create Dwolla customer, but don't fail if it doesn't work
+    let dwollaCustomerUrl = null;
+    let dwollaCustomerId = null;
+    
+    try {
+      dwollaCustomerUrl = await createDwollaCustomer({
+        ...userData,
+        type: 'personal'
+      });
 
-    if(!dwollaCustomerUrl) throw new Error('Error creating Dwolla customer')
-
-    const dwollaCustomerId = extractCustomerIdFromUrl(dwollaCustomerUrl);
+      if(dwollaCustomerUrl) {
+        dwollaCustomerId = extractCustomerIdFromUrl(dwollaCustomerUrl);
+      }
+    } catch (dwollaError) {
+      console.log('Dwolla customer creation failed (this is okay for development):', dwollaError);
+      // Continue without Dwolla for now
+    }
 
     const newUser = await database.createDocument(
       DATABASE_ID!,
@@ -85,23 +122,38 @@ export const signUp = async ({ password, ...userData }: SignUpParams) => {
       {
         ...userData,
         userId: newUserAccount.$id,
-        dwollaCustomerId,
-        dwollaCustomerUrl
+        dwollaCustomerId: dwollaCustomerId || "",
+        dwollaCustomerUrl: dwollaCustomerUrl || ""
       }
     )
 
+    console.log('Creating session...');
     const session = await account.createEmailPasswordSession(email, password);
 
-    cookies().set("appwrite-session", session.secret, {
+    const cookieStore = await cookies();
+    cookieStore.set("appwrite-session", session.secret, {
       path: "/",
       httpOnly: true,
       sameSite: "strict",
       secure: true,
     });
 
+    console.log('Sign up completed successfully');
     return parseStringify(newUser);
-  } catch (error) {
-    console.error('Error', error);
+  } catch (error: any) {
+    console.error('Sign up error:', error);
+    
+    // Handle specific Appwrite errors
+    if (error.code === 409) {
+      throw new Error('A user with this email already exists. Please try signing in instead.');
+    }
+    
+    // Handle other errors
+    if (error.message) {
+      throw new Error(error.message);
+    }
+    
+    throw new Error('An error occurred during sign up. Please try again.');
   }
 }
 
@@ -123,7 +175,8 @@ export const logoutAccount = async () => {
   try {
     const { account } = await createSessionClient();
 
-    cookies().delete('appwrite-session');
+    const cookieStore = await cookies();
+    cookieStore.delete('appwrite-session');
 
     await account.deleteSession('current');
   } catch (error) {

@@ -26,7 +26,7 @@ const CategoryBadge = ({ category }: CategoryBadgeProps) => {
   )
 } 
 
-const TransactionsTable = ({ transactions }: TransactionTableProps) => {
+const TransactionsTable = ({ transactions = [] }: { transactions?: Transaction[] }) => {
   return (
     <Table>
       <TableHeader className="bg-[#f9fafb]">

@@ -12,8 +12,8 @@ const ibmPlexSerif = IBM_Plex_Serif({
 })
 
 export const metadata: Metadata = {
-  title: "Horizon",
-  description: "Horizon is a modern banking platform for everyone.",
+  title: "JustBank",
+  description: "JustBank is a modern banking platform for everyone.",
   icons: {
     icon: '/icons/logo.svg'
   }
@@ -26,7 +26,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${ibmPlexSerif.variable}`}>{children}</body>
+      <body className={`${inter.variable} ${ibmPlexSerif.variable}`}>
+        {children}
+        <div className="w-full text-center py-2 text-xs text-gray-500 bg-white border-t">
+          © {new Date().getFullYear()} JustBank™. All rights reserved. For any help contact <a href="mailto:sjestonsingh@gmail.com" className="underline">sjestonsingh@gmail.com</a>.
+        </div>
+      </body>
     </html>
   );
 }
