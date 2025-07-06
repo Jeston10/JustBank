@@ -21,23 +21,42 @@ export const BankDropdown = ({
 }: BankDropdownProps) => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [selected, setSeclected] = useState(accounts[0]);
+  const [selected, setSeclected] = useState(accounts[0] || null);
 
   const handleBankChange = (id: string) => {
-    const account = accounts.find((account) => account.appwriteItemId === id)!;
+    const account = accounts.find((account) => account.appwriteItemId === id);
 
-    setSeclected(account);
-    const newUrl = formUrlQuery({
-      params: searchParams.toString(),
-      key: "id",
-      value: id,
-    });
-    router.push(newUrl, { scroll: false });
+    if (account) {
+      setSeclected(account);
+      const newUrl = formUrlQuery({
+        params: searchParams.toString(),
+        key: "id",
+        value: id,
+      });
+      router.push(newUrl, { scroll: false });
 
-    if (setValue) {
-      setValue("senderBank", id);
+      if (setValue) {
+        setValue("senderBank", id);
+      }
     }
   };
+
+  // If no accounts or no selected account, show a placeholder
+  if (!accounts.length || !selected) {
+    return (
+      <div className={`flex w-full bg-white gap-3 md:w-[300px] p-3 border rounded-md ${otherStyles}`}>
+        <Image
+          src="icons/credit-card.svg"
+          width={20}
+          height={20}
+          alt="account"
+        />
+        <p className="line-clamp-1 w-full text-left text-gray-500">
+          No bank accounts available
+        </p>
+      </div>
+    );
+  }
 
   return (
     <Select

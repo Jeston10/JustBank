@@ -1,5 +1,6 @@
 "use client"
 
+import MyBanks from "@/app/(root)/my-banks/page";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 
@@ -15,11 +16,11 @@ const DoughnutChart = ({ accounts }: DoughnutChartProps) => {
     datasets: [
       {
         label: 'Banks',
-        data: [100000, 200000, 300000],
+        data: balances,
         backgroundColor: ['#0747b6', '#2265d8', '#2f91fa'] 
       }
     ],
-    labels:['Bank1', 'Bank2', 'Bank3']
+    labels:accountNames
   }
 
   return <Doughnut 

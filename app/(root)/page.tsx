@@ -8,6 +8,25 @@ import { getLoggedInUser } from '@/lib/actions/user.actions';
 const Home = async ({ searchParams: { id, page } }: SearchParamProps) => {
   const currentPage = Number(page as string) || 1;
   const loggedIn = await getLoggedInUser();
+  
+  // If user is not logged in, show a message or redirect
+  if (!loggedIn) {
+    return (
+      <section className="home">
+        <div className="home-content">
+          <header className="home-header">
+            <HeaderBox 
+              type="greeting"
+              title="Welcome"
+              user="Guest"
+              subtext="Please sign in to access your account."
+            />
+          </header>
+        </div>
+      </section>
+    );
+  }
+
   const accounts = await getAccounts({ 
     userId: loggedIn.$id 
   })
@@ -32,8 +51,8 @@ const Home = async ({ searchParams: { id, page } }: SearchParamProps) => {
 
           <TotalBalanceBox 
             accounts={accountsData}
-            totalBanks={3}
-            totalCurrentBalance={600000}
+            totalBanks={accounts?.totalBanks}
+            totalCurrentBalance={accounts?.totalCurrentBalance}
           />
         </header>
 
@@ -48,7 +67,7 @@ const Home = async ({ searchParams: { id, page } }: SearchParamProps) => {
       <RightSidebar 
         user={loggedIn}
         transactions={account?.transactions}
-        banks={[{currentBalance:10000000},{currentBalance:20000000}]}
+        banks={accountsData?.slice(0, 2)}
       />
     </section>
   )
