@@ -32,6 +32,12 @@ export const createTransaction = async (transaction: CreateTransactionProps) => 
 
 export const getTransactionsByBankId = async ({bankId}: getTransactionsByBankIdProps) => {
   try {
+    // Validate bankId before making the query
+    if (!bankId || bankId.trim() === '') {
+      console.log('Invalid bankId provided to getTransactionsByBankId:', bankId);
+      return { total: 0, documents: [] };
+    }
+
     const { database } = await createAdminClient();
 
     const senderTransactions = await database.listDocuments(
@@ -56,6 +62,7 @@ export const getTransactionsByBankId = async ({bankId}: getTransactionsByBankIdP
 
     return parseStringify(transactions);
   } catch (error) {
-    console.log(error);
+    console.log('Error in getTransactionsByBankId:', error);
+    return { total: 0, documents: [] };
   }
 }

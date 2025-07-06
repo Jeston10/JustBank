@@ -18,17 +18,24 @@ const {
 
 export const getUserInfo = async ({ userId }: getUserInfoProps) => {
   try {
+    // Validate userId before making the query
+    if (!userId || userId.trim() === '') {
+      console.log('Invalid userId provided to getUserInfo:', userId);
+      return null;
+    }
+
     const { database } = await createAdminClient();
 
     const user = await database.listDocuments(
       DATABASE_ID!,
       USER_COLLECTION_ID!,
-      [Query.equal('userId', [userId])]
+      [Query.equal('userId', userId)]
     )
 
     return parseStringify(user.documents[0]);
   } catch (error) {
-    console.log(error)
+    console.log('Error in getUserInfo:', error);
+    return null;
   }
 }
 
@@ -213,6 +220,19 @@ export const createBankAccount = async ({
   shareableId,
 }: createBankAccountProps) => {
   try {
+    if (!userId) {
+      console.warn('[createBankAccount] No userId provided! Aborting.');
+      return null;
+    }
+    console.log('[createBankAccount] Creating bank account with data:', {
+      userId,
+      bankId,
+      accountId,
+      accessToken: accessToken ? '***' : 'MISSING',
+      fundingSourceUrl,
+      shareableId,
+    });
+
     const { database } = await createAdminClient();
 
     const bankAccount = await database.createDocument(
@@ -224,14 +244,16 @@ export const createBankAccount = async ({
         bankId,
         accountId,
         accessToken,
-        fundingSourceUrl,
+        fundingSourceUrl: fundingSourceUrl || "N/A",
         shareableId,
       }
     )
 
+    console.log('[createBankAccount] Bank account created successfully:', bankAccount.$id);
     return parseStringify(bankAccount);
   } catch (error) {
-    console.log(error);
+    console.error('[createBankAccount] Error creating bank account:', error);
+    return null;
   }
 }
 
@@ -240,6 +262,11 @@ export const exchangePublicToken = async ({
   user,
 }: exchangePublicTokenProps) => {
   try {
+    console.log('[exchangePublicToken] Called with user:', user);
+    if (!user || !user.$id) {
+      console.warn('[exchangePublicToken] No user or user.$id provided! Aborting.');
+      return;
+    }
     // Exchange public token for access token and item ID
     const response = await plaidClient.itemPublicTokenExchange({
       public_token: publicToken,
@@ -247,13 +274,14 @@ export const exchangePublicToken = async ({
 
     const accessToken = response.data.access_token;
     const itemId = response.data.item_id;
-    
+    console.log('[exchangePublicToken] Got accessToken and itemId:', accessToken ? '***' : 'MISSING', itemId);
     // Get account information from Plaid using the access token
     const accountsResponse = await plaidClient.accountsGet({
       access_token: accessToken,
     });
 
     const accountData = accountsResponse.data.accounts[0];
+    console.log('[exchangePublicToken] accountData:', accountData);
 
     // Create a processor token for Dwolla using the access token and account ID
     const request: ProcessorTokenCreateRequest = {
@@ -265,15 +293,13 @@ export const exchangePublicToken = async ({
     const processorTokenResponse = await plaidClient.processorTokenCreate(request);
     const processorToken = processorTokenResponse.data.processor_token;
 
-     // Create a funding source URL for the account using the Dwolla customer ID, processor token, and bank name
-     const fundingSourceUrl = await addFundingSource({
+    // Create a funding source URL for the account using the Dwolla customer ID, processor token, and bank name
+    const fundingSourceUrl = await addFundingSource({
       dwollaCustomerId: user.dwollaCustomerId,
       processorToken,
       bankName: accountData.name,
     });
-    
-    // If the funding source URL is not created, throw an error
-    if (!fundingSourceUrl) throw Error;
+    console.log('[exchangePublicToken] fundingSourceUrl:', fundingSourceUrl);
 
     // Create a bank account using the user ID, item ID, account ID, access token, funding source URL, and shareableId ID
     await createBankAccount({
@@ -281,7 +307,7 @@ export const exchangePublicToken = async ({
       bankId: itemId,
       accountId: accountData.account_id,
       accessToken,
-      fundingSourceUrl,
+      fundingSourceUrl: fundingSourceUrl || "N/A",
       shareableId: encryptId(accountData.account_id),
     });
 
@@ -293,56 +319,84 @@ export const exchangePublicToken = async ({
       publicTokenExchange: "complete",
     });
   } catch (error) {
-    console.error("An error occurred while creating exchanging token:", error);
+    console.error("[exchangePublicToken] An error occurred while exchanging token:", error);
   }
 }
 
 export const getBanks = async ({ userId }: getBanksProps) => {
   try {
+    if (!userId) {
+      console.warn('[getBanks] No userId provided! Aborting.');
+      return [];
+    }
+    // Validate userId before making the query
+    if (!userId || userId.trim() === '') {
+      console.log('[getBanks] Invalid userId provided to getBanks:', userId);
+      return [];
+    }
+
+    console.log('[getBanks] Fetching banks for userId:', userId);
+
     const { database } = await createAdminClient();
 
     const banks = await database.listDocuments(
       DATABASE_ID!,
       BANK_COLLECTION_ID!,
-      [Query.equal('userId', [userId])]
+      [Query.equal('userId', userId)]
     )
 
+    console.log(`[getBanks] Found ${banks.total} banks for user ${userId}:`, banks.documents.map(b => ({ id: b.$id, accountId: b.accountId })));
     return parseStringify(banks.documents);
   } catch (error) {
-    console.log(error)
+    console.log('[getBanks] Error in getBanks:', error);
+    return [];
   }
 }
 
 export const getBank = async ({ documentId }: getBankProps) => {
   try {
+    // Validate documentId before making the query
+    if (!documentId || documentId.trim() === '') {
+      console.log('Invalid documentId provided to getBank:', documentId);
+      return null;
+    }
+
     const { database } = await createAdminClient();
 
     const bank = await database.listDocuments(
       DATABASE_ID!,
       BANK_COLLECTION_ID!,
-      [Query.equal('$id', [documentId])]
+      [Query.equal('$id', documentId)]
     )
 
     return parseStringify(bank.documents[0]);
   } catch (error) {
-    console.log(error)
+    console.log('Error in getBank:', error);
+    return null;
   }
 }
 
 export const getBankByAccountId = async ({ accountId }: getBankByAccountIdProps) => {
   try {
+    // Validate accountId before making the query
+    if (!accountId || accountId.trim() === '') {
+      console.log('Invalid accountId provided to getBankByAccountId:', accountId);
+      return null;
+    }
+
     const { database } = await createAdminClient();
 
     const bank = await database.listDocuments(
       DATABASE_ID!,
       BANK_COLLECTION_ID!,
-      [Query.equal('accountId', [accountId])]
+      [Query.equal('accountId', accountId)]
     )
 
     if(bank.total !== 1) return null;
 
     return parseStringify(bank.documents[0]);
   } catch (error) {
-    console.log(error)
+    console.log('Error in getBankByAccountId:', error);
+    return null;
   }
 }
