@@ -1,5 +1,5 @@
 {
-  "name": "jsm_banking",
+  "name": "justbank",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
+    "@kurkle/color": "^0.4.0",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-label": "^2.0.2",
     "@radix-ui/react-progress": "^1.0.3",
@@ -17,7 +18,7 @@
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tabs": "^1.0.4",
     "@sentry/nextjs": "^7.112.2",
-    "chart.js": "^4.4.2",
+    "chart.js": "^4.5.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "dwolla-v2": "^3.4.0",

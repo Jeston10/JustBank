@@ -1,6 +1,7 @@
 import HeaderBox from '@/components/HeaderBox'
 import { Pagination } from '@/components/Pagination';
 import TransactionsTable from '@/components/TransactionsTable';
+import LiveTransactionsTable from '@/components/LiveTransactionsTable';
 import { getAccount, getAccounts } from '@/lib/actions/bank.actions';
 import { getLoggedInUser } from '@/lib/actions/user.actions';
 import { formatAmount } from '@/lib/utils';
@@ -58,9 +59,7 @@ const currentTransactions = account?.transactions.slice(
         </div>
 
         <section className="flex w-full flex-col gap-6">
-          <TransactionsTable 
-            transactions={currentTransactions}
-          />
+          <LiveTransactionsTable accountId={account?.data?.appwriteItemId || account?.appwriteItemId} />
             {totalPages > 1 && (
               <div className="my-4 w-full">
                 <Pagination totalPages={totalPages} page={currentPage} />

@@ -59,10 +59,35 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
       });
       const senderBank = await getBank({ documentId: data.senderBank });
 
+      // Log funding source URLs for debugging
+      console.log("Sender fundingSourceUrl:", senderBank?.fundingSourceUrl);
+      console.log("Receiver fundingSourceUrl:", receiverBank?.fundingSourceUrl);
+
+      // Validate funding source URLs
+      const isValidUrl = (url: string) => typeof url === 'string' && url.startsWith('https://api-sandbox.dwolla.com/funding-sources/');
+      if (!isValidUrl(senderBank?.fundingSourceUrl)) {
+        alert("Your source bank is not fully set up for transfers. Please reconnect this bank using the 'Connect Bank' button in the sidebar or My Banks section.");
+        setIsLoading(false);
+        return;
+      }
+      if (!isValidUrl(receiverBank?.fundingSourceUrl)) {
+        alert("The recipient's bank is not fully set up for transfers. Please ask the recipient to reconnect their bank using the 'Connect Bank' button in their My Banks section.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Validate amount
+      const amount = parseFloat(data.amount);
+      if (isNaN(amount) || amount <= 0) {
+        alert("Please enter a valid transfer amount.");
+        setIsLoading(false);
+        return;
+      }
+
       const transferParams = {
         sourceFundingSourceUrl: senderBank.fundingSourceUrl,
         destinationFundingSourceUrl: receiverBank.fundingSourceUrl,
-        amount: data.amount,
+        amount: amount.toFixed(2), // Ensure string format like "5.00"
       };
       // create transfer
       const transfer = await createTransfer(transferParams);
@@ -71,7 +96,7 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
       if (transfer) {
         const transaction = {
           name: data.name,
-          amount: data.amount,
+          amount: amount.toFixed(2),
           senderId: senderBank.userId.$id,
           senderBankId: senderBank.$id,
           receiverId: receiverBank.userId.$id,
@@ -88,6 +113,7 @@ const PaymentTransferForm = ({ accounts }: PaymentTransferFormProps) => {
       }
     } catch (error) {
       console.error("Submitting create transfer request failed: ", error);
+      alert("Transfer failed. Please check your bank setup and try again.");
     }
 
     setIsLoading(false);
