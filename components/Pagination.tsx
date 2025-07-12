@@ -6,20 +6,37 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { formUrlQuery } from "@/lib/utils";
 
-export const Pagination = ({ page, totalPages }: PaginationProps) => {
+interface PaginationProps {
+  page?: number;
+  totalPages?: number;
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
+}
+
+export const Pagination = ({ page, totalPages, currentPage, onPageChange }: PaginationProps) => {
   const router = useRouter();
   const searchParams = useSearchParams()!;
 
+  // Use either the new props or the old ones for backward compatibility
+  const currentPageNum = currentPage || page || 1;
+  const totalPagesNum = totalPages || 1;
+
   const handleNavigation = (type: "prev" | "next") => {
-    const pageNumber = type === "prev" ? page - 1 : page + 1;
+    const pageNumber = type === "prev" ? currentPageNum - 1 : currentPageNum + 1;
 
-    const newUrl = formUrlQuery({
-      params: searchParams.toString(),
-      key: "page",
-      value: pageNumber.toString(),
-    });
+    if (onPageChange) {
+      // Use the callback if provided (for news page)
+      onPageChange(pageNumber);
+    } else {
+      // Use URL-based navigation (for existing pages)
+      const newUrl = formUrlQuery({
+        params: searchParams.toString(),
+        key: "page",
+        value: pageNumber.toString(),
+      });
 
-    router.push(newUrl, { scroll: false });
+      router.push(newUrl, { scroll: false });
+    }
   };
 
   return (
@@ -29,7 +46,7 @@ export const Pagination = ({ page, totalPages }: PaginationProps) => {
         variant="ghost"
         className="p-0 hover:bg-transparent"
         onClick={() => handleNavigation("prev")}
-        disabled={Number(page) <= 1}
+        disabled={Number(currentPageNum) <= 1}
       >
         <Image
           src="/icons/arrow-left.svg"
@@ -41,14 +58,14 @@ export const Pagination = ({ page, totalPages }: PaginationProps) => {
         Prev
       </Button>
       <p className="text-14 flex items-center px-2">
-        {page} / {totalPages}
+        {currentPageNum} / {totalPagesNum}
       </p>
       <Button
         size="lg"
         variant="ghost"
         className="p-0 hover:bg-transparent"
         onClick={() => handleNavigation("next")}
-        disabled={Number(page) >= totalPages}
+        disabled={Number(currentPageNum) >= totalPagesNum}
       >
         Next
         <Image
