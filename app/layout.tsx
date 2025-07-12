@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Inter, IBM_Plex_Serif } from "next/font/google";
 import "./globals.css";
 import Chatbot from "../components/Chatbot";
+import QuoteSection from "../components/QuoteSection";
 
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 const ibmPlexSerif = IBM_Plex_Serif({
@@ -28,6 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${ibmPlexSerif.variable}`}>
+        <QuoteSection />
         {children}
         <Chatbot />
         <div className="w-full text-center py-2 text-xs text-gray-500 bg-white border-t">
