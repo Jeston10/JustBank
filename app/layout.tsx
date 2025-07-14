@@ -28,9 +28,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${ibmPlexSerif.variable}`}>
+      <body className={`${inter.variable} ${ibmPlexSerif.variable} min-h-screen flex flex-col`}>
         <QuoteSection />
-        {children}
+        <div className="flex-1 flex flex-col">
+          {children}
+        </div>
         <Chatbot />
         <div className="w-full text-center py-2 text-xs text-gray-500 bg-white border-t">
           © {new Date().getFullYear()} JustBank™. All rights reserved. For any help contact <a href="mailto:sjestonsingh@gmail.com" className="underline">sjestonsingh@gmail.com</a>.
