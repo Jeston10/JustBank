@@ -8,6 +8,15 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push('node-fetch');
+    }
+    return config;
+  },
+  experimental: {
+    serverComponentsExternalPackages: ['dwolla-v2']
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'g.foolcdn.com', port: '', pathname: '/**' },

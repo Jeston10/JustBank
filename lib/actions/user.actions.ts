@@ -166,14 +166,47 @@ export const signUp = async ({ password, ...userData }: SignUpParams) => {
 
 export async function getLoggedInUser() {
   try {
+    console.log("=== GETTING LOGGED IN USER ===");
     const { account } = await createSessionClient();
     const result = await account.get();
+    
+    console.log("Appwrite account result:", {
+      id: result.$id,
+      email: result.email,
+      name: result.name
+    });
 
-    const user = await getUserInfo({ userId: result.$id})
+    const user = await getUserInfo({ userId: result.$id});
+    
+    if (!user) {
+      console.error("User not found in database for Appwrite user:", result.$id);
+      return null;
+    }
+
+    console.log("User info retrieved:", {
+      id: user.$id,
+      email: user.email,
+      hasDwollaCustomerId: !!user.dwollaCustomerId,
+      hasDwollaCustomerUrl: !!user.dwollaCustomerUrl
+    });
 
     return parseStringify(user);
-  } catch (error) {
-    console.log(error)
+  } catch (error: any) {
+    console.error("=== GET LOGGED IN USER FAILED ===");
+    console.error("Error details:", {
+      message: error?.message,
+      code: error?.code,
+      type: error?.type,
+      response: error?.response
+    });
+    
+    // Check if it's an authentication error
+    if (error?.code === 401 || error?.message?.includes('unauthorized') || error?.message?.includes('session')) {
+      console.error("Authentication failed - user not logged in");
+    } else if (error?.message?.includes('fetch failed')) {
+      console.error("Network error - check Appwrite configuration");
+    }
+    
     return null;
   }
 }
@@ -244,7 +277,7 @@ export const createBankAccount = async ({
         bankId,
         accountId,
         accessToken,
-        fundingSourceUrl: fundingSourceUrl || "N/A",
+        fundingSourceUrl: fundingSourceUrl || null,
         shareableId,
       }
     )
@@ -378,6 +411,9 @@ export const getBank = async ({ documentId }: getBankProps) => {
 
 export const getBankByAccountId = async ({ accountId }: getBankByAccountIdProps) => {
   try {
+    console.log('=== GET BANK BY ACCOUNT ID ===');
+    console.log('Looking for account ID:', accountId);
+    
     // Validate accountId before making the query
     if (!accountId || accountId.trim() === '') {
       console.log('Invalid accountId provided to getBankByAccountId:', accountId);
@@ -386,17 +422,61 @@ export const getBankByAccountId = async ({ accountId }: getBankByAccountIdProps)
 
     const { database } = await createAdminClient();
 
+    console.log('Querying database for bank with accountId:', accountId);
     const bank = await database.listDocuments(
       DATABASE_ID!,
       BANK_COLLECTION_ID!,
       [Query.equal('accountId', accountId)]
     )
 
-    if(bank.total !== 1) return null;
+    console.log('Database query result:', {
+      total: bank.total,
+      documentsFound: bank.documents.length,
+      accountIds: bank.documents.map(doc => doc.accountId)
+    });
 
-    return parseStringify(bank.documents[0]);
+    if(bank.total !== 1) {
+      console.log('Bank not found or multiple banks found for account ID:', accountId);
+      return null;
+    }
+
+    const foundBank = parseStringify(bank.documents[0]);
+    console.log('Bank found successfully:', {
+      id: foundBank.$id,
+      accountId: foundBank.accountId,
+      userId: foundBank.userId,
+      hasFundingSourceUrl: !!foundBank.fundingSourceUrl
+    });
+
+    return foundBank;
   } catch (error) {
-    console.log('Error in getBankByAccountId:', error);
+    console.error('Error in getBankByAccountId:', error);
+    return null;
+  }
+}
+
+export const updateBank = async ({ bankId, userId, bank }: updateBankProps) => {
+  try {
+    console.log('[updateBank] Updating bank:', { bankId, userId, bank });
+    
+    if (!bankId || !userId) {
+      console.warn('[updateBank] Missing required parameters');
+      return null;
+    }
+
+    const { database } = await createAdminClient();
+
+    const updatedBank = await database.updateDocument(
+      DATABASE_ID!,
+      BANK_COLLECTION_ID!,
+      bankId,
+      bank
+    );
+
+    console.log('[updateBank] Bank updated successfully:', updatedBank.$id);
+    return parseStringify(updatedBank);
+  } catch (error) {
+    console.error('[updateBank] Error updating bank:', error);
     return null;
   }
 }

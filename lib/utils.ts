@@ -212,3 +212,88 @@ export const authFormSchema = (type: string) => z.object({
   email: z.string().email(),
   password: z.string().min(8),
 })
+
+// Validation function for Dwolla configuration
+export const validateDwollaConfig = () => {
+  // Only check client-accessible environment variables
+  // DWOLLA_KEY and DWOLLA_SECRET are server-side only
+  const requiredEnvVars = [
+    'NEXT_PUBLIC_DWOLLA_ENV' // This should be the client-accessible version
+  ];
+  
+  // Check if we're on the client side
+  const isClient = typeof window !== 'undefined';
+  
+  if (isClient) {
+    // On client side, we can't access server-side env vars
+    // Just check if we have the public environment variable
+    const dwollaEnv = process.env.NEXT_PUBLIC_DWOLLA_ENV;
+    
+    if (!dwollaEnv) {
+      console.warn('Dwolla environment not set for client side');
+      return {
+        isValid: false,
+        missingVars: ['NEXT_PUBLIC_DWOLLA_ENV'],
+        message: 'Dwolla environment not configured for client side.'
+      };
+    }
+    
+    return {
+      isValid: true,
+      missingVars: [],
+      message: 'Dwolla configuration is valid.'
+    };
+  } else {
+    // On server side, check all required variables
+    const serverRequiredVars = [
+      'DWOLLA_ENV',
+      'DWOLLA_KEY', 
+      'DWOLLA_SECRET'
+    ];
+    
+    const missingVars = serverRequiredVars.filter(varName => !process.env[varName]);
+    
+    if (missingVars.length > 0) {
+      console.warn('Missing Dwolla environment variables:', missingVars);
+      return {
+        isValid: false,
+        missingVars,
+        message: 'Dwolla is not properly configured. Some features may not work.'
+      };
+    }
+    
+    return {
+      isValid: true,
+      missingVars: [],
+      message: 'Dwolla configuration is valid.'
+    };
+  }
+}
+
+// Validation function for funding source URLs
+export const validateFundingSourceUrl = (url: string | undefined | null): boolean => {
+  if (!url || typeof url !== 'string') {
+    console.log('validateFundingSourceUrl: Invalid URL type or null/undefined:', url);
+    return false;
+  }
+  
+  // Check for placeholder values
+  if (url === 'N/A' || url === 'null' || url === 'undefined' || url.trim() === '') {
+    console.log('validateFundingSourceUrl: Placeholder or empty value:', url);
+    return false;
+  }
+  
+  console.log('validateFundingSourceUrl: Checking URL:', url);
+  
+  const validPatterns = [
+    'https://api-sandbox.dwolla.com/funding-sources/',
+    'https://api.dwolla.com/funding-sources/',
+    'https://api-sandbox.dwolla.com/funding-sources', // Without trailing slash
+    'https://api.dwolla.com/funding-sources' // Without trailing slash
+  ];
+  
+  const isValid = validPatterns.some(pattern => url.startsWith(pattern));
+  console.log('validateFundingSourceUrl: URL validation result:', isValid);
+  
+  return isValid;
+}

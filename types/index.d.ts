@@ -328,3 +328,9 @@ declare interface getBankProps {
 declare interface getBankByAccountIdProps {
   accountId: string;
 }
+
+declare interface updateBankProps {
+  bankId: string;
+  userId: string;
+  bank: Partial<Bank>;
+}

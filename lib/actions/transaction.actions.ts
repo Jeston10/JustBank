@@ -11,6 +11,25 @@ const {
 
 export const createTransaction = async (transaction: CreateTransactionProps) => {
   try {
+    console.log("=== CREATING TRANSACTION RECORD ===");
+    console.log("Transaction data:", {
+      name: transaction.name,
+      amount: transaction.amount,
+      senderId: transaction.senderId,
+      senderBankId: transaction.senderBankId,
+      receiverId: transaction.receiverId,
+      receiverBankId: transaction.receiverBankId,
+      email: transaction.email
+    });
+
+    // Validate required fields
+    if (!transaction.name || !transaction.amount || !transaction.senderId || 
+        !transaction.senderBankId || !transaction.receiverId || !transaction.receiverBankId) {
+      const error = new Error("Missing required transaction fields");
+      console.error("Transaction validation failed:", transaction);
+      throw error;
+    }
+
     const { database } = await createAdminClient();
 
     const newTransaction = await database.createDocument(
@@ -22,11 +41,20 @@ export const createTransaction = async (transaction: CreateTransactionProps) => 
         category: 'Transfer',
         ...transaction
       }
-    )
+    );
 
+    console.log("Transaction record created successfully:", newTransaction.$id);
     return parseStringify(newTransaction);
-  } catch (error) {
-    console.log(error);
+  } catch (error: any) {
+    console.error("=== TRANSACTION CREATION FAILED ===");
+    console.error("Error details:", {
+      message: error?.message,
+      code: error?.code,
+      type: error?.type,
+      stack: error?.stack
+    });
+    console.error("Transaction data that failed:", transaction);
+    throw error;
   }
 }
 

@@ -28,10 +28,12 @@ const getQuoteIndex = () => {
 };
 
 const QuoteSection = () => {
-  const [index, setIndex] = useState(getQuoteIndex);
   const [mounted, setMounted] = useState(false);
+  const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    // Set the initial index based on current time
+    setIndex(getQuoteIndex());
     setMounted(true);
     
     const interval = setInterval(() => {
@@ -44,11 +46,11 @@ const QuoteSection = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Prevent hydration mismatch by not rendering until mounted
+  // Show a placeholder during hydration to prevent mismatch
   if (!mounted) {
     return (
       <div className="w-full bg-gradient-to-r from-blue-100 to-blue-50 text-blue-900 rounded-md shadow p-4 mb-6 flex items-center justify-center min-h-[56px]">
-        <span className="text-center text-base md:text-lg font-medium italic">{QUOTES[getQuoteIndex()]}</span>
+        <span className="text-center text-base md:text-lg font-medium italic">Loading inspirational quote...</span>
       </div>
     );
   }

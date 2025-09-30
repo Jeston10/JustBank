@@ -188,7 +188,7 @@
 
   /* My Banks */
   .my-banks {
-    @apply flex h-screen max-h-screen w-full flex-col gap-8 bg-gray-25 p-8 xl:py-12;
+    @apply flex h-screen max-h-screen w-full flex-col gap-8 bg-gray-25 p-8 xl:py-12 pb-20;
   }
 
   /* My Banks */
@@ -297,6 +297,19 @@
 
   .form-link {
     @apply text-14 cursor-pointer font-medium text-bankGradient;
+  }
+
+  /* Pagination */
+  .pagination-btn {
+    @apply px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .pagination-page-btn {
+    @apply px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50;
+  }
+
+  .pagination-page-btn.active {
+    @apply bg-blue-600 text-white border-blue-600 hover:bg-blue-700;
   }
 
   /* Payment Transfer */
